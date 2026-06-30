@@ -47,10 +47,45 @@ class DatabricksConfig:
     server_hostname: Optional[str] = field(default_factory=lambda: os.getenv("DBX_SERVER_HOSTNAME"))
     http_path: Optional[str] = field(default_factory=lambda: os.getenv("DBX_HTTP_PATH"))
     access_token: Optional[str] = field(default_factory=lambda: os.getenv("DBX_ACCESS_TOKEN"))
+    #: name of a profile in ~/.databrickscfg (Databricks CLI config)
+    profile: Optional[str] = field(default_factory=lambda: os.getenv("DATABRICKS_CONFIG_PROFILE"))
+    #: SQL warehouse used for sink / dashboard / Genie
+    warehouse_id: Optional[str] = field(default_factory=lambda: os.getenv("DBX_WAREHOUSE_ID"))
+    catalog: str = field(default_factory=lambda: os.getenv("DBX_CATALOG", "main"))
+    schema: str = field(default_factory=lambda: os.getenv("DBX_SCHEMA", "cost_optimizer"))
+    genie_space_id: Optional[str] = field(default_factory=lambda: os.getenv("DBX_GENIE_SPACE_ID"))
 
     @property
     def is_configured(self) -> bool:
         return bool(self.server_hostname and self.http_path and self.access_token)
+
+    @property
+    def findings_table(self) -> str:
+        return f"{self.catalog}.{self.schema}.cost_findings"
+
+    @property
+    def usage_table(self) -> str:
+        return f"{self.catalog}.{self.schema}.cost_usage_daily"
+
+    def merge_from_cli_profile(self) -> "DatabricksConfig":
+        """Fill host/token from ~/.databrickscfg when not set via env.
+
+        Lets the optimizer run on whatever workspace the Databricks CLI is
+        logged into. http_path/warehouse still come from env/arg (the cfg file
+        has no warehouse path).
+        """
+        from .databricks_cfg import read_profile
+
+        prof = read_profile(self.profile)
+        if not prof:
+            return self
+        if not self.server_hostname and prof.get("host"):
+            self.server_hostname = prof["host"].replace("https://", "").rstrip("/")
+        if not self.access_token and prof.get("token"):
+            self.access_token = prof["token"]
+        if not self.http_path and self.warehouse_id:
+            self.http_path = f"/sql/1.0/warehouses/{self.warehouse_id}"
+        return self
 
 
 @dataclass

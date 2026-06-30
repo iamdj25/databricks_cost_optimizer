@@ -1,0 +1,9 @@
+# DAB-managed AI/BI (Lakeview) dashboard over the optimizer's output tables.
+# Edit table names inside cost_dashboard.lvdash.json if you change catalog/schema.
+resources:
+  dashboards:
+    cost_dashboard:
+      display_name: "Databricks Cost Optimizer"
+      file_path: ./cost_dashboard.lvdash.json
+      warehouse_id: ${var.warehouse_id}
+      embed_credentials: true

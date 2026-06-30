@@ -38,8 +38,34 @@ def test_findings_ranked_by_priority():
 def test_registry_extensible():
     from dbx_cost_optimizer.registry import list_agents
     for name in ["telemetry", "compute", "job_query", "storage", "forecast",
-                 "report", "pdf_report", "alert"]:
+                 "report", "pdf_report", "sink", "alert", "dashboard", "genie"]:
         assert name in list_agents()
+
+
+def test_skills_load_and_map():
+    from dbx_cost_optimizer.skills import load_skills, skill_for_category
+    skills = load_skills()
+    assert "compute_rightsizing" in skills
+    assert skills["compute_rightsizing"].fix_family == "Compute right-sizing"
+    # category -> skill mapping works
+    assert any(s.skill == "compute_rightsizing"
+               for s in skill_for_category("no_autoterminate"))
+
+
+def test_databrickscfg_reader(tmp_path, monkeypatch):
+    cfg = tmp_path / "cfg"
+    cfg.write_text("[DEFAULT]\nhost = https://example.cloud.databricks.com\ntoken = dapiABC\n"
+                   "[prod]\nhost = https://prod.databricks.com\ntoken = dapiXYZ\n")
+    monkeypatch.setenv("DATABRICKS_CONFIG_FILE", str(cfg))
+    from dbx_cost_optimizer.databricks_cfg import read_profile, list_profiles
+    assert read_profile()["token"] == "dapiABC"
+    assert read_profile("prod")["host"] == "https://prod.databricks.com"
+    assert "prod" in list_profiles()
+
+
+def test_sink_skipped_on_mock():
+    ctx = _run()
+    assert ctx.meta.get("sink_note") == "skipped (mock connector)"
 
 
 def test_pdf_report_generated(tmp_path):

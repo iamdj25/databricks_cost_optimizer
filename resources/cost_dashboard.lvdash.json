@@ -1,0 +1,251 @@
+{
+  "datasets": [
+    {
+      "name": "findings",
+      "displayName": "Findings",
+      "queryLines": [
+        "SELECT * FROM main.cost_optimizer.cost_findings"
+      ]
+    },
+    {
+      "name": "by_family",
+      "displayName": "Savings by fix family",
+      "queryLines": [
+        "SELECT fix_family, SUM(monthly_savings_usd) AS savings, COUNT(*) AS n FROM main.cost_optimizer.cost_findings GROUP BY fix_family ORDER BY savings DESC"
+      ]
+    },
+    {
+      "name": "usage",
+      "displayName": "Daily spend",
+      "queryLines": [
+        "SELECT usage_date, cost_usd FROM main.cost_optimizer.cost_usage_daily ORDER BY usage_date"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "overview",
+      "displayName": "Cost Optimization",
+      "layout": [
+        {
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 2,
+            "height": 3
+          },
+          "widget": {
+            "name": "kpi_savings",
+            "queries": [
+              {
+                "name": "main",
+                "query": {
+                  "datasetName": "findings",
+                  "fields": [
+                    {
+                      "name": "total",
+                      "expression": "SUM(`monthly_savings_usd`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total",
+                  "displayName": "Monthly savings $"
+                }
+              }
+            }
+          }
+        },
+        {
+          "position": {
+            "x": 2,
+            "y": 0,
+            "width": 4,
+            "height": 3
+          },
+          "widget": {
+            "name": "kpi_count",
+            "queries": [
+              {
+                "name": "main",
+                "query": {
+                  "datasetName": "findings",
+                  "fields": [
+                    {
+                      "name": "n",
+                      "expression": "COUNT(`id`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "n",
+                  "displayName": "Findings"
+                }
+              }
+            }
+          }
+        },
+        {
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 3,
+            "height": 6
+          },
+          "widget": {
+            "name": "bar_family",
+            "queries": [
+              {
+                "name": "main",
+                "query": {
+                  "datasetName": "by_family",
+                  "fields": [
+                    {
+                      "name": "fix_family",
+                      "expression": "`fix_family`"
+                    },
+                    {
+                      "name": "savings",
+                      "expression": "`savings`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "fix_family",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "savings",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "position": {
+            "x": 3,
+            "y": 3,
+            "width": 3,
+            "height": 6
+          },
+          "widget": {
+            "name": "trend",
+            "queries": [
+              {
+                "name": "main",
+                "query": {
+                  "datasetName": "usage",
+                  "fields": [
+                    {
+                      "name": "usage_date",
+                      "expression": "`usage_date`"
+                    },
+                    {
+                      "name": "cost_usd",
+                      "expression": "`cost_usd`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "usage_date",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "cost_usd",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 6,
+            "height": 8
+          },
+          "widget": {
+            "name": "table",
+            "queries": [
+              {
+                "name": "main",
+                "query": {
+                  "datasetName": "findings",
+                  "fields": [
+                    {
+                      "name": "recommendation",
+                      "expression": "`recommendation`"
+                    },
+                    {
+                      "name": "fix_family",
+                      "expression": "`fix_family`"
+                    },
+                    {
+                      "name": "monthly_savings_usd",
+                      "expression": "`monthly_savings_usd`"
+                    },
+                    {
+                      "name": "effort",
+                      "expression": "`effort`"
+                    },
+                    {
+                      "name": "risk",
+                      "expression": "`risk`"
+                    },
+                    {
+                      "name": "doc_url",
+                      "expression": "`doc_url`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+# Databricks Asset Bundle (DAB) for the cost optimizer.
+# Deploy:  databricks bundle deploy -t dev --profile <cli-profile>
+# Run job: databricks bundle run cost_optimizer_job -t dev
+bundle:
+  name: databricks_cost_optimizer
+
+variables:
+  warehouse_id:
+    description: SQL warehouse id for sink / dashboard / Genie
+    default: ""
+  catalog:
+    description: Unity Catalog catalog for output tables
+    default: main
+  schema:
+    description: schema for output tables
+    default: cost_optimizer
+  node_type_id:
+    description: worker node type (cloud-specific, e.g. i3.xlarge / Standard_D4ds_v5 / n2-standard-4)
+    default: i3.xlarge
+
+# build the wheel from pyproject and upload it as a job library
+artifacts:
+  optimizer_wheel:
+    type: whl
+    build: python -m build --wheel
+    path: .
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://REPLACE-with-your-workspace.cloud.databricks.com
+  prod:
+    mode: production
+    workspace:
+      host: https://REPLACE-with-your-workspace.cloud.databricks.com

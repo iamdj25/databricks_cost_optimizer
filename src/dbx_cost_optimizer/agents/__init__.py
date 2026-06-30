@@ -5,6 +5,6 @@ import it here (or anywhere before Orchestrator.run).
 """
 from .base import BaseAgent
 from . import (telemetry, compute, job_query, storage, forecast, report,  # noqa: F401
-               pdf_report, alert)
+               pdf_report, sink, alert, dashboard, genie)
 
 __all__ = ["BaseAgent"]

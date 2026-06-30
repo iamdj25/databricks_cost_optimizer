@@ -36,12 +36,22 @@ pip install -e '.[all]'                # everything incl. pytest
 ```bash
 dbxopt run --mock                      # full pass on fixtures, prints report
 dbxopt run --mock --out ctx.json       # also dump full context
-dbxopt run                             # live (needs .env Databricks creds)
+dbxopt run                             # live (env or CLI profile auth)
+dbxopt run --profile prod              # use a ~/.databrickscfg profile
 dbxopt alert --dry-run-email           # evaluate thresholds, print would-be email
+dbxopt publish                         # run + write Delta tables + create dashboard
+dbxopt dashboard                       # (re)create the AI/BI dashboard
+dbxopt genie                           # interactive Genie Q&A (REPL)
+dbxopt genie --ask "top 3 fix families by savings"
 dbxopt agents                          # list registered agents
+dbxopt skills                          # list skill cards  (--show <name> for one)
 ```
 
-Copy `.env.example` -> `.env` and fill Databricks + SMTP creds.
+Copy `.env.example` -> `.env`, or just log in with the Databricks CLI
+(`databricks auth login`) and pass `--profile`. Auth resolution:
+env creds → `~/.databrickscfg` profile → mock.
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the high-level diagram.
 
 ## Email alerts
 
@@ -86,6 +96,55 @@ by adding a `DocEntry` to `docs_catalog.CATALOG`.
 **New alert channel:** implement `notifications/base.Notifier.send` (e.g. Slack).
 **New alert rule:** `alert_agent.add_rule(fn)` where `fn(ctx, thresholds) -> AlertEvent|None`.
 **New SQL:** add to `sql/queries.py` with a `-- query: <name>` marker.
+
+## Deploy as a Databricks Asset Bundle (DAB)
+
+Run the optimizer as a scheduled **job** that writes findings to Delta and renders
+a **dashboard** — all in your workspace.
+
+```bash
+databricks auth login --host https://<workspace>      # one-time
+# edit databricks.yml host + set vars (warehouse_id, catalog, schema, node_type_id)
+databricks secrets create-scope cost_optimizer
+databricks secrets put-secret cost_optimizer warehouse_id      # paste warehouse id
+databricks bundle validate -t dev
+databricks bundle deploy -t dev                       # builds wheel, uploads, creates job+dashboard
+databricks bundle run cost_optimizer_job -t dev       # run now (else daily 06:00 UTC)
+```
+
+What deploys:
+- **Job** (`resources/optimizer_job.yml`) — runs `dbxopt run` on a job cluster. Inside
+  Databricks the Spark connector hits System Tables with the job identity's perms (no token),
+  and the `sink` agent writes `cost_findings` + `cost_usage_daily`.
+- **Dashboard** (`resources/cost_dashboard.yml` + `cost_dashboard.lvdash.json`) — AI/BI
+  Lakeview dashboard: savings KPIs, savings-by-fix-family, spend trend, ranked table.
+- Notebook alternative: `notebooks/run_optimizer.py`.
+
+## Genie (interactive)
+
+Two delivery agents back the conversational layer:
+- **dashboard** agent — creates the AI/BI dashboard via the Lakeview API.
+- **genie** agent — drives an interactive Genie space over the cost tables.
+
+One-time: in the Databricks UI create a **Genie space** over `cost_findings`,
+`cost_usage_daily`, and `system.billing.usage`; set `DBX_GENIE_SPACE_ID`. Then:
+
+```bash
+dbxopt genie
+genie> which clusters waste the most money?
+genie> how much can we save by fixing auto-termination?
+genie> reset          # new conversation
+```
+
+Follow-ups keep conversation context. Each answer returns Genie's text, the
+generated SQL, and result rows. `--ask` gives a one-shot non-interactive answer.
+
+## Skills
+
+`skills/*.md` are capability playbook cards (when-to-use, signals, fix, docs) that
+the agents map to via `Finding.category`. List with `dbxopt skills`; load in code
+with `dbx_cost_optimizer.skills.load_skills()` / `skill_for_category(cat)`. Add a
+card → auto-discovered.
 
 ## Test
 

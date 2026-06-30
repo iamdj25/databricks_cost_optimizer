@@ -1,0 +1,36 @@
+# Daily job: runs the optimizer on the job cluster (Spark connector -> System
+# Tables with the job identity's permissions), writes findings to Delta tables.
+# The dashboard resource (cost_dashboard.yml) visualizes those tables.
+resources:
+  jobs:
+    cost_optimizer_job:
+      name: databricks-cost-optimizer
+      schedule:
+        quartz_cron_expression: "0 0 6 * * ?"   # 06:00 daily
+        timezone_id: UTC
+        pause_status: UNPAUSED
+      email_notifications:
+        on_failure:
+          - ${workspace.current_user.userName}
+      tasks:
+        - task_key: optimize_and_sink
+          job_cluster_key: optimizer_cluster
+          python_wheel_task:
+            package_name: dbx-cost-optimizer
+            entry_point: dbxopt
+            parameters: ["run", "--no-email"]
+          libraries:
+            - whl: ./dist/*.whl
+      job_clusters:
+        - job_cluster_key: optimizer_cluster
+          new_cluster:
+            spark_version: 15.4.x-scala2.12
+            node_type_id: ${var.node_type_id}
+            num_workers: 1
+            data_security_mode: SINGLE_USER
+            spark_env_vars:
+              DBX_WAREHOUSE_ID: "{{secrets/cost_optimizer/warehouse_id}}"
+              DBX_CATALOG: ${var.catalog}
+              DBX_SCHEMA: ${var.schema}
+              # email alerts (optional): point at an SMTP secret scope
+              ALERT_RECIPIENTS: "{{secrets/cost_optimizer/alert_recipients}}"
