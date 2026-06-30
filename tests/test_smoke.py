@@ -37,5 +37,30 @@ def test_findings_ranked_by_priority():
 
 def test_registry_extensible():
     from dbx_cost_optimizer.registry import list_agents
-    for name in ["telemetry", "compute", "job_query", "storage", "forecast", "report", "alert"]:
+    for name in ["telemetry", "compute", "job_query", "storage", "forecast",
+                 "report", "pdf_report", "alert"]:
         assert name in list_agents()
+
+
+def test_pdf_report_generated(tmp_path):
+    import os
+    out = tmp_path / "report.pdf"
+    os.environ["DBX_PDF_PATH"] = str(out)
+    try:
+        ctx = _run()
+    finally:
+        os.environ.pop("DBX_PDF_PATH", None)
+    path = ctx.meta.get("pdf_report_path")
+    assert path and os.path.exists(path)
+    with open(path, "rb") as fh:
+        head = fh.read(5)
+    # real PDF if reportlab present, else markdown fallback
+    assert head == b"%PDF-" or path.endswith(".md")
+
+
+def test_pdf_groups_by_fix_family():
+    from dbx_cost_optimizer.docs_catalog import lookup
+    assert lookup("no_autoterminate").fix_family == "Compute right-sizing"
+    assert lookup("repeated_query").fix_family == "Query tuning"
+    # unknown category still yields a usable doc link
+    assert lookup("totally_new_rule").url.startswith("https://docs.databricks.com")

@@ -89,6 +89,8 @@ class Settings:
     llm_model: str = field(default_factory=lambda: os.getenv("DBX_LLM_MODEL", "claude-opus-4-8"))
     anthropic_api_key: Optional[str] = field(default_factory=lambda: os.getenv("ANTHROPIC_API_KEY"))
 
+    pdf_output_path: str = field(default_factory=lambda: os.getenv("DBX_PDF_PATH", "dbx_cost_report.pdf"))
+
     @classmethod
     def load(cls) -> "Settings":
         return cls()

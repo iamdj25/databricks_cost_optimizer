@@ -17,11 +17,13 @@ dependencies = [
 [project.optional-dependencies]
 databricks = ["databricks-sql-connector>=3.0", "databricks-sdk>=0.20"]
 llm = ["anthropic>=0.40"]
-dev = ["pytest>=7.4"]
+pdf = ["reportlab>=4.0"]
+dev = ["pytest>=7.4", "reportlab>=4.0"]
 all = [
     "databricks-sql-connector>=3.0",
     "databricks-sdk>=0.20",
     "anthropic>=0.40",
+    "reportlab>=4.0",
     "pytest>=7.4",
 ]
 

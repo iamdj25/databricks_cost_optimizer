@@ -14,6 +14,7 @@ Orchestrator (supervisor)
           storage          -> OPTIMIZE / clustering / version bloat
   tier 2  forecast         -> baseline run-rate + projected monthly spend
           report           -> rank findings by (savings*confidence/effort), render MD+JSON
+          pdf_report       -> PDF grouped by fix type: issue + fix + official docs link
   tier 3  alert            -> evaluate thresholds, email recipient list on breach
 ```
 
@@ -26,6 +27,7 @@ deterministic tools (`tools/`), never from an LLM.
 pip install -e .                       # core
 pip install -e '.[databricks]'         # + live System Tables connector
 pip install -e '.[llm]'                # + optional Claude narrative
+pip install -e '.[pdf]'                # + PDF report (reportlab)
 pip install -e '.[all]'                # everything incl. pytest
 ```
 
@@ -69,6 +71,16 @@ class ServerlessFitAgent(BaseAgent):
         return []
 ```
 Add `"serverless_fit"` to the crew (or pass `crew=[...]` to `Orchestrator`). Done.
+
+## PDF report
+
+`PdfReportAgent` (tier 2) dispatches on each `Finding.category` via `docs_catalog.py`,
+groups findings by **fix family** (Compute right-sizing, Storage maintenance, Query
+tuning, Job configuration), and writes a PDF where every finding shows: issue/evidence,
+the exact fix, rollback, a plain "how it works", and a **clickable official
+docs.databricks.com link**. Output path = `DBX_PDF_PATH` (default `dbx_cost_report.pdf`).
+Falls back to Markdown if `reportlab` isn't installed. Add a mapping for a new fix type
+by adding a `DocEntry` to `docs_catalog.CATALOG`.
 
 **New data source:** implement `connectors/base.Connector.query`.
 **New alert channel:** implement `notifications/base.Notifier.send` (e.g. Slack).

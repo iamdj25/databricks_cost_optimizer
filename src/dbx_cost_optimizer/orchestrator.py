@@ -17,7 +17,8 @@ from .notifications.base import Notifier
 from .registry import get_agent, list_agents
 
 # default crew, in dependency order; extend by appending registered agent names
-DEFAULT_CREW = ["telemetry", "compute", "job_query", "storage", "forecast", "report", "alert"]
+DEFAULT_CREW = ["telemetry", "compute", "job_query", "storage", "forecast", "report",
+                "pdf_report", "alert"]
 
 
 class Orchestrator:

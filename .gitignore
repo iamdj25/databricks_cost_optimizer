@@ -16,3 +16,8 @@ venv/
 # Output dumps
 ctx.json
 *.context.json
+
+# Generated reports
+dbx_cost_report.pdf
+*.report.pdf
+report.md

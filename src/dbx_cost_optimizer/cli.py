@@ -29,6 +29,7 @@ def cmd_run(args) -> int:
         "findings": len(ctx.get_findings()),
         "alerts": ctx.meta.get("alert_event_count", 0),
         "alert_email_sent": ctx.meta.get("alert_email_sent"),
+        "pdf_report_path": ctx.meta.get("pdf_report_path"),
         "skipped_agents": ctx.meta.get("skipped_agents", []),
     }, indent=2))
     if args.out:
