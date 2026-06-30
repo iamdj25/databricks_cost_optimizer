@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dbx-cost-optimizer"
+version = "0.1.0"
+description = "Multi-agent Databricks cost optimizer with email alerting"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Dhiraj" }]
+dependencies = [
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+databricks = ["databricks-sql-connector>=3.0", "databricks-sdk>=0.20"]
+llm = ["anthropic>=0.40"]
+dev = ["pytest>=7.4"]
+all = [
+    "databricks-sql-connector>=3.0",
+    "databricks-sdk>=0.20",
+    "anthropic>=0.40",
+    "pytest>=7.4",
+]
+
+[project.scripts]
+dbxopt = "dbx_cost_optimizer.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+dbx_cost_optimizer = ["sql/*.sql"]
